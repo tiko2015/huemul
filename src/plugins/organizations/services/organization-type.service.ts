@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { ID, PaginatedList } from '@vendure/common/lib/shared-types';
 import {
+    Asset,
     ListQueryBuilder,
     ListQueryOptions,
     RelationPaths,
@@ -13,26 +14,27 @@ import {
 import { ORGANIZATIONS_PLUGIN_OPTIONS } from '../constants';
 import { OrganizationType } from '../entities/organization-type.entity';
 import { PluginInitOptions } from '../types';
+import { CreateOrganizationTypeInput, UpdateOrganizationTypeInput } from '../gql/generated'
 
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationTypeInput {
-    code: string;
-    name: string;
-    // Define the input fields here
-}
-interface UpdateOrganizationTypeInput {
-    id: ID;
-    code?: string;
-    name?: string;
-    // Define the input fields here
-}
+// // These can be replaced by generated types if you set up code generation
+// interface CreateOrganizationTypeInput {
+//     code: string;
+//     name: string;
+//     // Define the input fields here
+// }
+// interface UpdateOrganizationTypeInput {
+//     id: ID;
+//     code?: string;
+//     name?: string;
+//     // Define the input fields here
+// }
 
 @Injectable()
 export class OrganizationTypeService {
     constructor(
         private connection: TransactionalConnection,
         private listQueryBuilder: ListQueryBuilder, @Inject(ORGANIZATIONS_PLUGIN_OPTIONS) private options: PluginInitOptions
-    ) {}
+    ) { }
 
     findAll(
         ctx: RequestContext,
@@ -73,8 +75,17 @@ export class OrganizationTypeService {
 
     async update(ctx: RequestContext, input: UpdateOrganizationTypeInput): Promise<OrganizationType> {
         const entity = await this.connection.getEntityOrThrow(ctx, OrganizationType, input.id);
-        const updatedEntity = patchEntity(entity, input);
-        await this.connection.getRepository(ctx, OrganizationType).save(updatedEntity, { reload: false });
+        if (input.logo) {
+            entity.logo = await this.connection.getEntityOrThrow(ctx, Asset, input.logo);
+        }
+
+        const { logo, ...restInput } = input;
+        const updatedEntity = patchEntity(entity, restInput);
+        const newlogo = (logo) ? await this.connection.getEntityOrThrow(ctx, Asset, logo) : undefined;
+        await this.connection.getRepository(ctx, OrganizationType).save({
+            ...updatedEntity,
+            logo: newlogo
+        }, { reload: false });
         return assertFound(this.findOne(ctx, updatedEntity.id));
     }
 

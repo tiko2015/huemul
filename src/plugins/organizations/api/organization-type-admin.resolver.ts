@@ -13,19 +13,20 @@ import {
 } from '@vendure/core';
 import { OrganizationType } from '../entities/organization-type.entity';
 import { OrganizationTypeService } from '../services/organization-type.service';
+import { CreateOrganizationTypeInput, UpdateOrganizationTypeInput } from '../gql/generated'
 
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationTypeInput {
-    code: string;
-    name: string;
-    // Define the input fields here
-}
-interface UpdateOrganizationTypeInput {
-    id: ID;
-    code?: string;
-    name?: string;
-    // Define the input fields here
-}
+// // These can be replaced by generated types if you set up code generation
+// interface CreateOrganizationTypeInput {
+//     code: string;
+//     name: string;
+//     // Define the input fields here
+// }
+// interface UpdateOrganizationTypeInput {
+//     id: ID;
+//     code?: string;
+//     name?: string;
+//     // Define the input fields here
+// }
 
 @Resolver()
 export class OrganizationTypeAdminResolver {

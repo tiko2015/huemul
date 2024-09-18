@@ -1,8 +1,9 @@
 import {
     DeepPartial,
-    VendureEntity
+    VendureEntity,
+    Asset
 } from '@vendure/core';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany, ManyToOne } from 'typeorm';
 import { Organization } from './organization.entity';
 
 
@@ -20,4 +21,7 @@ export class OrganizationType extends VendureEntity {
 
     @OneToMany(() => Organization, organization => organization.type)
     organizations: Organization[];
+
+    @ManyToOne(() => Asset, { onDelete: 'SET NULL', eager: true })
+    logo: Asset;
 }

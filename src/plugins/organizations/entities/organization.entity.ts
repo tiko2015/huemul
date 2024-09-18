@@ -5,6 +5,8 @@ import {
     Product,
     Channel,
     Seller,
+    EntityId,
+    ID
 } from '@vendure/core';
 import { Column, Entity, ManyToOne, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { OrganizationAddress } from './organization-address.entity';
@@ -19,6 +21,9 @@ export class Organization extends VendureEntity {
 
     @OneToMany(() => OrganizationAddress, (address) => address.organization)
     addresses: OrganizationAddress[];
+
+    @EntityId({ nullable: true })
+    defaultAddressId: ID;
 
     @ManyToMany(() => Channel)
     @JoinTable()

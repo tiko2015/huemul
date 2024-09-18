@@ -11,43 +11,9 @@ import {
     RequestContext,
     Transaction
 } from '@vendure/core';
-import { Organization } from '../entities/organization.entity';
 import { OrganizationAddress } from '../entities/organization-address.entity';
 import { OrganizationAddressService } from '../services/organization-address.service';
-
-interface PointInput {
-    latitude: number;
-    longitude: number;
-}
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationAddressInput {
-    fullName: string;
-    streetLine1: string;
-    streetLine2: string;
-    city: string;
-    province: string;
-    postalCode: string;
-    phoneNumber: string;
-    defaultAddress: boolean;
-    organization: Organization;
-    location: PointInput;
-    // Define the input fields here
-}
-interface UpdateOrganizationAddressInput {
-    id: ID;
-    fullName?: string;
-    streetLine1?: string;
-    streetLine2?: string;
-    city?: string;
-    province?: string;
-    postalCode?: string;
-    phoneNumber?: string;
-    defaultAddress?: boolean;
-    organization?: Organization;
-    location?: PointInput;
-    // Define the input fields here
-}
+import { CreateOrganizationAddressInput, UpdateOrganizationAddressInput } from '../gql/generated'
 
 @Resolver()
 export class OrganizationAddressAdminResolver {

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { ID, PaginatedList } from '@vendure/common/lib/shared-types';
 import {
+    Asset,
     ListQueryBuilder,
     ListQueryOptions,
     RelationPaths,
@@ -13,19 +14,7 @@ import {
 import { ORGANIZATIONS_PLUGIN_OPTIONS } from '../constants';
 import { OrganizationBranch } from '../entities/organization-branch.entity';
 import { PluginInitOptions } from '../types';
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationBranchInput {
-    name: string;
-    parent: OrganizationBranch;
-    // Define the input fields here
-}
-interface UpdateOrganizationBranchInput {
-    id: ID;
-    name?: string;
-    parent?: OrganizationBranch;
-    // Define the input fields here
-}
+import { CreateOrganizationBranchInput, InputMaybe, UpdateOrganizationBranchInput } from '../gql/generated';
 
 @Injectable()
 export class OrganizationBranchService {
@@ -65,18 +54,39 @@ export class OrganizationBranchService {
                 relations,
             });
     }
-
     async create(ctx: RequestContext, input: CreateOrganizationBranchInput): Promise<OrganizationBranch> {
-        const newEntity = await this.connection.getRepository(ctx, OrganizationBranch).save(input);
+
+        const { parentId, ...restInput } = input;
+
+        const parentEntity = (parentId) && await this.connection.getEntityOrThrow(ctx, OrganizationBranch, parentId);
+        const isRoot = (!parentEntity) ? true : false;
+
+        const newEntity = await this.connection.getRepository(ctx, OrganizationBranch).save({
+            ...restInput,
+            parent: parentEntity ? parentEntity : undefined,
+            isRoot,
+        });
+
         return assertFound(this.findOne(ctx, newEntity.id));
     }
 
     async update(ctx: RequestContext, input: UpdateOrganizationBranchInput): Promise<OrganizationBranch> {
-        const entity = await this.connection.getEntityOrThrow(ctx, OrganizationBranch, input.id, {
-            relations: ['parent'],
-        });
-        const updatedEntity = patchEntity(entity, input);
-        await this.connection.getRepository(ctx, OrganizationBranch).save(updatedEntity, { reload: false });
+        const entity = await this.connection.getEntityOrThrow(ctx, OrganizationBranch, input.id);
+        const { parentId, logo, ...restInput } = input;
+        const newlogo = (logo) ? await this.connection.getEntityOrThrow(ctx, Asset, logo) : undefined;
+        const parentEntity = (parentId) && await this.connection.getEntityOrThrow(ctx, OrganizationBranch, parentId);
+        const isRoot = (parentEntity) ? false : (parentId === null) ? true : undefined;
+
+        const updatedEntity = patchEntity(entity, restInput);
+        await this.connection.getRepository(ctx, OrganizationBranch).save(
+            {
+                ...updatedEntity,
+                parent: parentEntity ? parentEntity : (parentId === null) ? null : undefined,
+                isRoot,
+                logo: newlogo,
+            },
+            { reload: false }
+        );
         return assertFound(this.findOne(ctx, updatedEntity.id));
     }
 

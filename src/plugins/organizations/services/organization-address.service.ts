@@ -15,40 +15,7 @@ import { ORGANIZATIONS_PLUGIN_OPTIONS } from '../constants';
 import { Organization } from '../entities/organization.entity';
 import { OrganizationAddress } from '../entities/organization-address.entity';
 import { PluginInitOptions } from '../types';
-
-interface PointInput {
-    latitude: number;
-    longitude: number;
-}
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationAddressInput {
-    fullName: string;
-    streetLine1: string;
-    streetLine2: string;
-    city: string;
-    province: string;
-    postalCode: string;
-    phoneNumber: string;
-    defaultAddress: boolean;
-    organization: Organization;
-    location: PointInput;
-    // Define the input fields here
-}
-interface UpdateOrganizationAddressInput {
-    id: ID;
-    fullName?: string;
-    streetLine1?: string;
-    streetLine2?: string;
-    city?: string;
-    province?: string;
-    postalCode?: string;
-    phoneNumber?: string;
-    defaultAddress?: boolean;
-    organization?: Organization;
-    location?: PointInput;
-    // Define the input fields here
-}
+import { CreateOrganizationAddressInput, UpdateOrganizationAddressInput } from '../gql/generated'
 
 @Injectable()
 export class OrganizationAddressService {
@@ -137,14 +104,23 @@ export class OrganizationAddressService {
     }
 
     async create(ctx: RequestContext, input: CreateOrganizationAddressInput): Promise<OrganizationAddress> {
-        const point: Point = {
-            type: 'Point',
-            coordinates: [input.location.longitude, input.location.latitude],
-        };
+        let location: Point | null = null;
+        let organization: Organization | undefined;
+
+        if (input.location) {
+            location = {
+                type: 'Point',
+                coordinates: [input.location.longitude, input.location.latitude],
+            };
+        }
+        if (input.organization) {
+            organization = await this.connection.getEntityOrThrow(ctx, Organization, input.organization);
+        }
 
         const updatedEntity = this.connection.getRepository(ctx, OrganizationAddress).create({
             ...input,
-            location: point,
+            location,
+            organization
         });
 
         const newEntity = await this.connection.getRepository(ctx, OrganizationAddress).save(updatedEntity);
@@ -161,8 +137,11 @@ export class OrganizationAddressService {
 
             entity.location = point;
         }
+        if (input.organization) {
+            entity.organization = await this.connection.getEntityOrThrow(ctx, Organization, input.organization);
+        }
 
-        const { location, ...restInput } = input;
+        const { location, organization, ...restInput } = input;
         const updatedEntity = patchEntity(entity, restInput);
         await this.connection.getRepository(ctx, OrganizationAddress).save(updatedEntity, { reload: false });
         return assertFound(this.findOne(ctx, updatedEntity.id));
