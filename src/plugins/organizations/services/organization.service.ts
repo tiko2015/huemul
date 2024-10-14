@@ -1,4 +1,5 @@
-import { Seller, VendureEntity } from '@vendure/core';
+import { InputMaybe } from './../ui/gql/graphql';
+import { Seller } from '@vendure/core';
 import { Inject, Injectable } from '@nestjs/common';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { ID, PaginatedList } from '@vendure/common/lib/shared-types';
@@ -18,33 +19,7 @@ import { OrganizationBranch } from '../entities/organization-branch.entity';
 import { PluginInitOptions } from '../types';
 import { OrganizationAddress } from '../entities/organization-address.entity';
 import { OrganizationType } from '../entities/organization-type.entity';
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationInput {
-    code: string;
-    name: string;
-    enabled: boolean;
-    description: string;
-    email: string;
-    owner: Seller;
-    // Define the input fields here
-}
-interface UpdateOrganizationInput {
-    id: ID;
-    code?: string;
-    name?: string;
-    enabled?: boolean;
-    description?: string;
-    email?: string;
-    owner?: Seller;
-    type?: OrganizationType;
-    collaborators?: [ID];
-    branches?: [ID];
-    affiliatedWidth?: [ID];
-    linksRRSS?: [string];
-    addresses?: [ID];
-    // Define the input fields here
-}
+import { CreateOrganizationInput, UpdateOrganizationInput } from '../gql/generated';
 
 @Injectable()
 export class OrganizationService {
@@ -85,24 +60,32 @@ export class OrganizationService {
             });
     }
 
-    async create(ctx: RequestContext, input: CreateOrganizationInput): Promise<Organization> {
-        const newEntity = await this.connection.getRepository(ctx, Organization).save(input);
-        return assertFound(this.findOne(ctx, newEntity.id));
+    async create(ctx: RequestContext, input: CreateOrganizationInput, relations?: RelationPaths<Organization>,): Promise<Organization> {
+        const organization = new Organization(input);
+        if (input.ownerId) {
+            const owner = await this.connection.getRepository(ctx, Seller).findOne({ where: { id: input.ownerId } });
+            if (owner) {
+                organization.owner = owner;
+            }
+        }
+        const newEntity = await this.connection.getRepository(ctx, Organization).save(organization);
+        return assertFound(this.findOne(ctx, newEntity.id, relations));
     }
 
-    async update(ctx: RequestContext, input: UpdateOrganizationInput): Promise<Organization> {
-        const entity = await this.connection.getEntityOrThrow(ctx, Organization, input.id, {
-            relations: ['owner', 'type']
-        });
-        const updatedEntity = patchEntity(entity, omit(input, ['branches', 'collaborators', 'affiliatedWidth', 'addresses']));
+    async update(ctx: RequestContext, input: UpdateOrganizationInput, relations?: RelationPaths<Organization>,): Promise<Organization> {
+        const entity = await this.connection.getEntityOrThrow(ctx, Organization, input.id);
+        const updatedEntity = patchEntity(entity, omit(input, ['typeId', 'ownerId', 'branchesId', 'collaboratorsId', 'affiliatedWidthId', 'addressesId']));
 
-        updatedEntity.branches = await this.loadRelatedEntities(ctx, input.branches, OrganizationBranch);
-        updatedEntity.collaborators = await this.loadRelatedEntities(ctx, input.collaborators, Seller);
-        updatedEntity.affiliatedWidth = await this.loadRelatedEntities(ctx, input.affiliatedWidth, Organization);
-        updatedEntity.addresses = await this.loadRelatedEntities(ctx, input.addresses, OrganizationAddress);
+        updatedEntity.owner = await this.loadRelatedEntity(ctx, input.ownerId, Seller);
+        updatedEntity.type = await this.loadRelatedEntity(ctx, input.typeId, OrganizationType);
+
+        updatedEntity.branches = await this.loadRelatedEntities(ctx, input.branchesId, OrganizationBranch);
+        updatedEntity.collaborators = await this.loadRelatedEntities(ctx, input.collaboratorsId, Seller);
+        updatedEntity.affiliatedWidth = await this.loadRelatedEntities(ctx, input.affiliatedWidthId, Organization);
+        updatedEntity.addresses = await this.loadRelatedEntities(ctx, input.addressesId, OrganizationAddress);
 
         await this.connection.getRepository(ctx, Organization).save(updatedEntity, { reload: false });
-        return assertFound(this.findOne(ctx, updatedEntity.id));
+        return assertFound(this.findOne(ctx, updatedEntity.id, relations));
     }
 
     async delete(ctx: RequestContext, id: ID): Promise<DeletionResponse> {
@@ -122,7 +105,7 @@ export class OrganizationService {
 
     private async loadRelatedEntities<T>(
         ctx: RequestContext,
-        ids: ID[] | undefined,
+        ids: InputMaybe<string[]> | undefined,
         entityClass: any
     ): Promise<any> {
         if (!ids) {
@@ -135,4 +118,16 @@ export class OrganizationService {
         }
         return entities;
     }
+
+    private async loadRelatedEntity<T>(
+        ctx: RequestContext,
+        id: InputMaybe<string> | undefined,
+        entityClass: any
+    ): Promise<any> {
+        if (!id) {
+            return;
+        }
+        return await this.connection.getEntityOrThrow(ctx, entityClass, id);
+    }
+
 }

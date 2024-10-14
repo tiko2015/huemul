@@ -1,5 +1,3 @@
-import { OrganizationAddress } from './../entities/organization-address.entity';
-import { ID } from '@vendure/common/lib/shared-types';
 import gql from 'graphql-tag';
 
 const organizationTypeAdminApiExtensions = gql`
@@ -10,6 +8,7 @@ const organizationTypeAdminApiExtensions = gql`
     code: String!
     name: String!
     organizations: [Organization]
+    logo: Asset
   }
 
   type OrganizationTypeList implements PaginatedList {
@@ -34,6 +33,7 @@ const organizationTypeAdminApiExtensions = gql`
     id: ID!
     code: String
     name: String
+    logo: ID
   }
 
   extend type Mutation {
@@ -56,7 +56,6 @@ const organizationAddressAdminApiExtensions = gql`
     province: String!
     postalCode: String!
     phoneNumber: String!
-    defaultAddress: Boolean!
     organization: Organization
     location: Point
   }
@@ -99,7 +98,6 @@ const organizationAddressAdminApiExtensions = gql`
     province: String!
     postalCode: String!
     phoneNumber: String!
-    defaultAddress: Boolean!
     organization: ID!
     location: PointInput
   }
@@ -113,7 +111,6 @@ const organizationAddressAdminApiExtensions = gql`
     province: String
     postalCode: String
     phoneNumber: String
-    defaultAddress: Boolean
     organization: ID
     location: PointInput
   }
@@ -130,7 +127,12 @@ const organizationBranchAdminApiExtensions = gql`
     createdAt: DateTime!
     updatedAt: DateTime!
     name: String!
+    slug: String!
+    isPrivate: Boolean!
+    isRoot: Boolean!
     parent: OrganizationBranch
+    children: [OrganizationBranch]
+    logo: Asset
   }
 
   type OrganizationBranchList implements PaginatedList {
@@ -148,13 +150,18 @@ const organizationBranchAdminApiExtensions = gql`
 
   input CreateOrganizationBranchInput {
     name: String!
-    parent: ID
+    slug: String!
+    parentId: ID
+    isPrivate: Boolean!
   }
 
   input UpdateOrganizationBranchInput {
     id: ID!
     name: String
-    parent: ID
+    slug: String
+    parentId: ID
+    isPrivate: Boolean
+    logo: ID
   }
 
   extend type Mutation {
@@ -181,6 +188,7 @@ const organizationAdminApiExtensions = gql`
     products: [Product]
     linksRRSS: [String]
     addresses: [OrganizationAddress]
+    defaultAddressId: ID
   }
 
   type OrganizationList implements PaginatedList {
@@ -202,7 +210,7 @@ const organizationAdminApiExtensions = gql`
     enabled: Boolean!
     description: String!
     email: String!
-    owner: ID!
+    ownerId: ID!
   }
 
   input UpdateOrganizationInput {
@@ -212,13 +220,14 @@ const organizationAdminApiExtensions = gql`
     enabled: Boolean
     description: String
     email: String
-    owner: ID
-    type: ID
-    collaborators: [ID!]
-    branches: [ID!]
-    affiliatedWidth: [ID!]
     linksRRSS: [String!]
-    addresses: [ID!]
+    ownerId: ID
+    typeId: ID
+    collaboratorsId: [ID!]
+    branchesId: [ID!]
+    affiliatedWidthId: [ID!]
+    addressesId: [ID!]
+    defaultAddressId: ID
   }
 
   extend type Mutation {

@@ -13,19 +13,7 @@ import {
 } from '@vendure/core';
 import { OrganizationBranch } from '../entities/organization-branch.entity';
 import { OrganizationBranchService } from '../services/organization-branch.service';
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationBranchInput {
-    name: string;
-    parent: OrganizationBranch;
-    // Define the input fields here
-}
-interface UpdateOrganizationBranchInput {
-    id: ID;
-    name?: string;
-    parent: OrganizationBranch;
-    // Define the input fields here
-}
+import { CreateOrganizationBranchInput, UpdateOrganizationBranchInput } from '../gql/generated';
 
 @Resolver()
 export class OrganizationBranchAdminResolver {

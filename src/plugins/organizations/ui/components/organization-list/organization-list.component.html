@@ -1,0 +1,65 @@
+<!-- optional if you want some buttons at the top -->
+<vdr-page-block>
+    <vdr-action-bar>
+        <vdr-ab-left></vdr-ab-left>
+        <vdr-ab-right>
+            <a class="btn btn-primary" *vdrIfPermissions="['CreateOrganization']" [routerLink]="['./', 'create']">
+                <clr-icon shape="plus"></clr-icon>
+                Crear entidad
+            </a>
+        </vdr-ab-right>
+    </vdr-action-bar>
+</vdr-page-block>
+
+<!-- The data table -->
+<vdr-data-table-2 id="organization-list" [items]="items$ | async" [itemsPerPage]="itemsPerPage$ | async"
+    [totalItems]="totalItems$ | async" [currentPage]="currentPage$ | async" [filters]="filters"
+    (pageChange)="setPageNumber($event)" (itemsPerPageChange)="setItemsPerPage($event)">
+    <!-- optional if you want to support bulk actions -->
+    <vdr-bulk-action-menu locationId="organization-list" [hostComponent]="this" [selectionManager]="selectionManager" />
+
+    <!-- Adds a search bar -->
+    <vdr-dt2-search [searchTermControl]="searchTermControl" searchTermPlaceholder="Filter by title" />
+
+    <!-- Here we define all the available columns -->
+    <vdr-dt2-column id="id" [heading]="'common.id' | translate" [hiddenByDefault]="true">
+        <ng-template let-organization="item">
+            {{ organization.id }}
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="created-at" [heading]="'common.created-at' | translate" [hiddenByDefault]="true"
+        [sort]="sorts.get('createdAt')">
+        <ng-template let-organization="item">
+            {{ organization.createdAt | localeDate : 'short' }}
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="updated-at" [heading]="'common.updated-at' | translate" [hiddenByDefault]="true"
+        [sort]="sorts.get('updatedAt')">
+        <ng-template let-organization="item">
+            {{ organization.updatedAt | localeDate : 'short' }}
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="name" heading="Nombre" [optional]="false" [sort]="sorts.get('name')">
+        <ng-template let-organization="item">
+            <a class="button-ghost" [routerLink]="['./', organization.id]"><span>{{ organization.name }}</span>
+                <clr-icon shape="arrow right"></clr-icon>
+            </a>
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="code" heading="Code" [hiddenByDefault]="true">
+        <ng-template let-organization="item">
+            {{ organization.code }}
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="type" heading="Tipo" [optional]="false">
+        <ng-template let-organization="item">
+            {{ organization.type?.name }}
+        </ng-template>
+    </vdr-dt2-column>
+    <vdr-dt2-column id="enabled" heading="Habilitado" [optional]="false">
+        <ng-template let-organization="item">
+            <vdr-chip *ngIf="organization.enabled" colorType="success">Habilitado</vdr-chip>
+            <vdr-chip *ngIf="!organization.enabled" colorType="warning">Deshabilitado</vdr-chip>
+        </ng-template>
+    </vdr-dt2-column>
+</vdr-data-table-2>

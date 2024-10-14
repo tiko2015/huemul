@@ -1,4 +1,3 @@
-import { Seller } from '@vendure/core';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { DeletionResponse, Permission } from '@vendure/common/lib/generated-types';
 import {
@@ -13,35 +12,8 @@ import {
     Transaction
 } from '@vendure/core';
 import { Organization } from '../entities/organization.entity';
-import { OrganizationType } from '../entities/organization-type.entity';
 import { OrganizationService } from '../services/organization.service';
-
-// These can be replaced by generated types if you set up code generation
-interface CreateOrganizationInput {
-    code: string;
-    name: string;
-    enabled: boolean;
-    description: string;
-    email: string;
-    owner: Seller;
-    // Define the input fields here
-}
-interface UpdateOrganizationInput {
-    id: ID;
-    code?: string;
-    name?: string;
-    enabled?: boolean;
-    description?: string;
-    email?: string;
-    owner?: Seller;
-    type?: OrganizationType;
-    collaborators?: [ID];
-    branches?: [ID];
-    affiliatedWidth?: [ID];
-    linksRRSS?: [string];
-    addresses?: [ID];
-    // Define the input fields here
-}
+import { CreateOrganizationInput, UpdateOrganizationInput } from '../gql/generated';
 
 @Resolver()
 export class OrganizationAdminResolver {
@@ -73,8 +45,9 @@ export class OrganizationAdminResolver {
     async createOrganization(
         @Ctx() ctx: RequestContext,
         @Args() args: { input: CreateOrganizationInput },
+        @Relations(Organization) relations: RelationPaths<Organization>,
     ): Promise<Organization> {
-        return this.organizationService.create(ctx, args.input);
+        return this.organizationService.create(ctx, args.input, relations);
     }
 
     @Mutation()
@@ -83,8 +56,9 @@ export class OrganizationAdminResolver {
     async updateOrganization(
         @Ctx() ctx: RequestContext,
         @Args() args: { input: UpdateOrganizationInput },
+        @Relations(Organization) relations: RelationPaths<Organization>,
     ): Promise<Organization> {
-        return this.organizationService.update(ctx, args.input);
+        return this.organizationService.update(ctx, args.input, relations);
     }
 
     @Mutation()

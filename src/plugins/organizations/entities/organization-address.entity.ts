@@ -3,7 +3,7 @@ import {
     VendureEntity,
     Country
 } from '@vendure/core';
-import { Column, Entity, ManyToOne, Index, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, Index } from 'typeorm';
 import { Point } from 'geojson';
 
 import { Organization } from './organization.entity';
@@ -33,7 +33,6 @@ export class OrganizationAddress extends VendureEntity {
     country: Country;
 
     @Column({ default: '' }) phoneNumber: string;
-    @Column({ default: false }) defaultAddress: boolean;
 
     @Index({ spatial: true })
     @Column({
@@ -42,6 +41,6 @@ export class OrganizationAddress extends VendureEntity {
         srid: 4326,
         nullable: true,
     })
-    location: Point
+    location: Point | null
 
 }
